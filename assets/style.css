@@ -32,6 +32,8 @@ h2 { font-size: 14px; margin: 20px 0 9px; color:#e2e8f0; }
 .mini-table th, .mini-table td { padding:6px 5px; border-bottom:1px solid rgba(148,163,184,.14); text-align:left; }
 .mini-table th { color:#93c5fd; font-weight:700; }
 .leaflet-container { background:#020617; }
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.52) contrast(1.22) saturate(.65) !important; }
+.leaflet-overlay-pane { mix-blend-mode: normal; }
 .leaflet-control-layers, .leaflet-bar a { background:#0b1728 !important; color:#e2e8f0 !important; border-color:rgba(148,163,184,.22) !important; }
 .leaflet-control-attribution { background:rgba(2,6,23,.72) !important; color:#94a3b8 !important; }
 code { color: #fbbf24; }
