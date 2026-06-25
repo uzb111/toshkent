@@ -2,11 +2,6 @@ name: Fetch OSM pilot buildings
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - scripts/fetch_osm_buildings.py
-      - .github/workflows/fetch-osm-buildings.yml
-      - requirements.txt
 
 permissions:
   contents: write
