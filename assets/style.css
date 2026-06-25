@@ -1,0 +1,16 @@
+html, body { height: 100%; margin: 0; font-family: Inter, Arial, sans-serif; background: #0e1117; color: #f5f7fb; }
+#map { position: fixed; inset: 0 0 0 360px; background: #111827; }
+#panel { position: fixed; inset: 0 auto 0 0; width: 320px; padding: 22px 20px; background: rgba(14,17,23,.96); box-shadow: 6px 0 24px rgba(0,0,0,.35); z-index: 1000; overflow: auto; }
+h1 { font-size: 22px; line-height: 1.2; margin: 0 0 12px; }
+h2 { font-size: 15px; margin: 20px 0 8px; }
+.muted { color: #aab2c0; font-size: 13px; line-height: 1.55; }
+.card { margin-top: 14px; padding: 12px; border: 1px solid #283142; border-radius: 12px; background: #151b26; font-size: 13px; line-height: 1.5; }
+.legend div { display: flex; align-items: center; gap: 10px; margin: 8px 0; color: #d5dbe7; font-size: 13px; }
+.swatch { display: inline-block; width: 18px; height: 12px; border-radius: 3px; }
+.swatch.boundary { background: rgba(255,255,255,.08); border: 2px solid #7dd3fc; }
+.swatch.building { background: #f97316; opacity: .85; }
+.swatch.selected { background: #38bdf8; opacity: .9; }
+.footer { margin-top: 24px; color: #7f8999; font-size: 11px; line-height: 1.45; }
+.leaflet-popup-content { font-size: 13px; }
+code { color: #fbbf24; }
+@media (max-width: 720px) { #panel { width: auto; height: 32vh; inset: auto 0 0 0; } #map { inset: 0 0 32vh 0; } }
