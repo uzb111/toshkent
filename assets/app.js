@@ -1,13 +1,22 @@
 const map = L.map('map', { zoomControl: true }).setView([41.19, 69.62], 8);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 const info = document.getElementById('info');
-let selectedLayer = null;
-let districtLayer = null;
+const kpiBuildings = document.getElementById('kpi-buildings');
+const kpiFootprint = document.getElementById('kpi-footprint');
+const kpiShare = document.getElementById('kpi-share');
+const kpiPilot = document.getElementById('kpi-pilot');
+
+let provinceLayer = null;
+let pilotLayer = null;
+let buildingLayer = null;
+let selectedBuilding = null;
+let pilotStats = {};
+let pilotBounds = {};
 
 const PILOT_AREAS = [
   { name: 'Nurafshon', bbox: [69.31055, 40.98250, 69.38143, 41.07371] },
@@ -19,33 +28,40 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.kumi.systems/api/interpreter'
 ];
 
-function districtStyle(feature) {
+function fmt(num, digits = 0) {
+  return Number(num || 0).toLocaleString('uz-UZ', { maximumFractionDigits: digits });
+}
+
+function setInfo(html) {
+  info.innerHTML = html;
+}
+
+function provinceStyle() {
+  return { color: '#0ea5e9', weight: 2.4, opacity: 0.95, fillColor: '#38bdf8', fillOpacity: 0.035, interactive: false };
+}
+
+function pilotStyle(feature) {
   const p = feature.properties || {};
-  const builtShare = Number(p.built_share_pct || 0);
-  const hasPilotData = Number(p.building_count || 0) > 0;
-  const fillOpacity = builtShare > 0 ? Math.min(0.72, 0.14 + builtShare / 35) : 0.10;
+  const active = Number(p.building_count || 0) > 0;
   return {
-    color: hasPilotData ? '#fb923c' : '#7dd3fc',
-    weight: hasPilotData ? 1.8 : 1.1,
+    color: active ? '#fb923c' : '#f59e0b',
+    weight: active ? 2.4 : 1.6,
     opacity: 0.95,
-    fillColor: hasPilotData ? '#f97316' : '#1f2937',
-    fillOpacity: hasPilotData ? Math.max(0.24, fillOpacity) : 0.10
+    dashArray: active ? null : '7 7',
+    fillColor: '#f97316',
+    fillOpacity: active ? 0.13 : 0.07
   };
 }
 
-function selectFeature(layer, props) {
-  if (selectedLayer) selectedLayer.setStyle(districtStyle(selectedLayer.feature));
-  selectedLayer = layer;
-  layer.setStyle({ color: '#38bdf8', weight: 3, fillOpacity: 0.38 });
-  const rows = [
-    `<b>${props.name || 'Hudud'}</b>`,
-    `Maydon: ${Number(props.area_km2 || 0).toLocaleString('uz-UZ', { maximumFractionDigits: 1 })} km²`,
-    props.building_count ? `Binolar soni: ${Number(props.building_count).toLocaleString('uz-UZ')}` : null,
-    props.building_area_km2 ? `Bino footprint maydoni: ${Number(props.building_area_km2).toLocaleString('uz-UZ', { maximumFractionDigits: 3 })} km²` : null,
-    props.built_share_pct ? `Built-up ulushi: ${Number(props.built_share_pct).toLocaleString('uz-UZ', { maximumFractionDigits: 3 })}%` : null,
-    props.data_source ? `Manba: ${props.data_source}` : null
-  ].filter(Boolean);
-  info.innerHTML = rows.join('<br>');
+function buildingStyle(feature) {
+  const area = Number(feature.properties?.area_m2 || 0);
+  return {
+    color: area > 400 ? '#7c2d12' : '#ea580c',
+    weight: selectedBuilding === feature ? 1.8 : 0.45,
+    opacity: 0.85,
+    fillColor: area > 400 ? '#dc2626' : '#f97316',
+    fillOpacity: selectedBuilding === feature ? 0.92 : 0.68
+  };
 }
 
 async function loadGeoJSON(url) {
@@ -110,45 +126,106 @@ function ringAreaM2(coords) {
 }
 
 function featureAreaM2(feature) {
-  try {
-    return ringAreaM2(feature.geometry.coordinates[0]);
-  } catch {
-    return 0;
-  }
+  try { return ringAreaM2(feature.geometry.coordinates[0]); } catch { return 0; }
 }
 
-function updateDistrictStats(stats) {
-  if (!districtLayer) return;
-  districtLayer.eachLayer(layer => {
+function bboxToBounds([w, s, e, n]) {
+  return L.latLngBounds([[s, w], [n, e]]);
+}
+
+function updateKpis() {
+  const totals = Object.values(pilotStats).reduce((acc, s) => {
+    acc.count += s.count || 0;
+    acc.areaM2 += s.areaM2 || 0;
+    acc.areaKm2 += s.areaKm2 || 0;
+    return acc;
+  }, { count: 0, areaM2: 0, areaKm2: 0 });
+  const share = totals.areaKm2 ? ((totals.areaM2 / 1000000) / totals.areaKm2) * 100 : 0;
+  kpiBuildings.textContent = fmt(totals.count);
+  kpiFootprint.textContent = fmt(totals.areaM2 / 1000000, 3);
+  kpiShare.textContent = fmt(share, 3);
+  kpiPilot.textContent = Object.keys(pilotStats).length || PILOT_AREAS.length;
+}
+
+function showSummary() {
+  const rows = Object.entries(pilotStats).map(([name, s]) => {
+    const share = s.areaKm2 ? ((s.areaM2 / 1000000) / s.areaKm2) * 100 : 0;
+    return `<tr><td>${name}</td><td>${fmt(s.count)}</td><td>${fmt(s.areaM2 / 1000000, 3)}</td><td>${fmt(share, 3)}%</td></tr>`;
+  }).join('');
+
+  setInfo(`
+    <b>Real OSM bino ma’lumoti yuklandi</b><br>
+    <span class="muted">Bino footprintlari ustiga bosing — obyekt pasporti chiqadi.</span>
+    <table class="mini-table">
+      <thead><tr><th>Hudud</th><th>Bino</th><th>km²</th><th>%</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `);
+}
+
+function updatePilotLayerStats() {
+  if (!pilotLayer) return;
+  pilotLayer.eachLayer(layer => {
     const props = layer.feature.properties || {};
-    const item = stats[props.name];
-    if (!item) return;
-    const areaKm2 = Number(props.area_km2 || 0);
-    props.building_count = item.count;
-    props.building_area_m2 = Number(item.areaM2.toFixed(2));
-    props.building_area_km2 = Number((item.areaM2 / 1000000).toFixed(6));
-    props.building_density_per_km2 = areaKm2 ? Number((item.count / areaKm2).toFixed(3)) : 0;
-    props.built_share_pct = areaKm2 ? Number(((item.areaM2 / 1000000) / areaKm2 * 100).toFixed(6)) : 0;
+    const s = pilotStats[props.name];
+    if (!s) return;
+    props.building_count = s.count;
+    props.building_area_m2 = Number(s.areaM2.toFixed(2));
+    props.building_area_km2 = Number((s.areaM2 / 1000000).toFixed(6));
+    props.built_share_pct = s.areaKm2 ? Number((((s.areaM2 / 1000000) / s.areaKm2) * 100).toFixed(6)) : 0;
     props.data_source = 'OSM live';
-    layer.setStyle(districtStyle(layer.feature));
+    layer.setStyle(pilotStyle(layer.feature));
   });
+}
+
+function showPilotInfo(props) {
+  setInfo(`
+    <b>${props.name}</b><br>
+    Maydon: ${fmt(props.area_km2, 2)} km²<br>
+    Binolar soni: ${fmt(props.building_count)}<br>
+    Footprint maydoni: ${fmt(props.building_area_km2, 3)} km²<br>
+    Built-up ulushi: ${fmt(props.built_share_pct, 3)}%<br>
+    <span class="muted">Manba: OpenStreetMap building footprintlari</span>
+  `);
 }
 
 function renderBuildings(geojson, label = 'Bino footprintlari') {
   if (!geojson.features || !geojson.features.length) return null;
-  const layer = L.geoJSON(geojson, {
-    style: { color: '#ea580c', weight: 0.35, opacity: 0.75, fillColor: '#f97316', fillOpacity: 0.62 },
-    interactive: false
+  if (buildingLayer) map.removeLayer(buildingLayer);
+
+  buildingLayer = L.geoJSON(geojson, {
+    style: buildingStyle,
+    onEachFeature: (feature, layer) => {
+      layer.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        selectedBuilding = feature;
+        buildingLayer.setStyle(buildingStyle);
+        layer.setStyle({ color: '#38bdf8', weight: 2, fillColor: '#0ea5e9', fillOpacity: 0.95 });
+        const p = feature.properties || {};
+        setInfo(`
+          <b>Bino obyekti</b><br>
+          Hudud: ${p.pilot_area || '–'}<br>
+          OSM ID: ${p.osm_id || '–'}<br>
+          Turi: ${p.building || 'building'}<br>
+          Footprint: ${fmt(p.area_m2, 1)} m²<br>
+          ${p.name ? `Nomi: ${p.name}<br>` : ''}
+          <span class="muted">Bu footprint OSM building=* tegi asosida olingan.</span>
+        `);
+      });
+      layer.on('mouseover', () => layer.setStyle({ weight: 1.4, fillOpacity: 0.86 }));
+      layer.on('mouseout', () => { if (selectedBuilding !== feature) layer.setStyle(buildingStyle(feature)); });
+    }
   }).addTo(map);
-  layer.bringToFront();
+
+  buildingLayer.bringToFront();
   console.log(label, geojson.features.length);
-  return layer;
+  return buildingLayer;
 }
 
 async function loadLiveBuildings() {
-  info.innerHTML = 'OSM orqali Nurafshon va Chirchiq binolari yuklanmoqda...<br><span class="muted">10–60 soniya vaqt olishi mumkin.</span>';
+  setInfo('OSM orqali Nurafshon va Chirchiq binolari yuklanmoqda...<br><span class="muted">10–60 soniya vaqt olishi mumkin.</span>');
   const features = [];
-  const stats = {};
+  pilotStats = {};
 
   for (const area of PILOT_AREAS) {
     const data = await fetchOverpass(area);
@@ -163,32 +240,37 @@ async function loadLiveBuildings() {
       feature.properties.area_m2 = Number(a.toFixed(2));
       totalArea += a;
     }
-    stats[area.name] = { count: areaFeatures.length, areaM2: totalArea };
+    const bbox = bboxToBounds(area.bbox);
+    const approxAreaKm2 = Math.max(0.01, (bbox.getNorth() - bbox.getSouth()) * 111 * (bbox.getEast() - bbox.getWest()) * 111 * Math.cos(((bbox.getNorth() + bbox.getSouth()) / 2) * Math.PI / 180));
+    pilotStats[area.name] = { count: areaFeatures.length, areaM2: totalArea, areaKm2: approxAreaKm2 };
     features.push(...areaFeatures);
   }
 
-  const geojson = { type: 'FeatureCollection', features };
-  renderBuildings(geojson, 'Live OSM buildings');
-  updateDistrictStats(stats);
-
-  const lines = Object.entries(stats).map(([name, s]) => `${name}: <b>${s.count.toLocaleString('uz-UZ')}</b> bino`);
-  info.innerHTML = `Real OSM bino ma’lumoti yuklandi.<br>${lines.join('<br>')}<br><br>Hudud ustiga bosing.`;
+  renderBuildings({ type: 'FeatureCollection', features }, 'Live OSM buildings');
+  updatePilotLayerStats();
+  updateKpis();
+  showSummary();
 }
 
 async function init() {
+  const province = await loadGeoJSON('data/toshkent_viloyati_boundary.geojson');
+  provinceLayer = L.geoJSON(province, { style: provinceStyle, interactive: false }).addTo(map);
+  map.fitBounds(provinceLayer.getBounds(), { padding: [26, 26] });
+
   const districts = await loadGeoJSON('data/toshkent_viloyati_tumanlar.geojson');
-  districtLayer = L.geoJSON(districts, {
-    style: districtStyle,
+  const pilotFeatures = {
+    type: 'FeatureCollection',
+    features: districts.features.filter(f => PILOT_AREAS.some(a => a.name === f.properties?.name))
+  };
+
+  pilotLayer = L.geoJSON(pilotFeatures, {
+    style: pilotStyle,
     onEachFeature: (feature, layer) => {
-      layer.on({
-        click: () => selectFeature(layer, feature.properties || {}),
-        mouseover: () => layer.setStyle({ weight: 2.4 }),
-        mouseout: () => { if (layer !== selectedLayer) layer.setStyle(districtStyle(feature)); }
-      });
+      pilotBounds[feature.properties.name] = layer.getBounds();
+      layer.on('click', () => showPilotInfo(feature.properties || {}));
       layer.bindTooltip(feature.properties?.name || '', { sticky: true });
     }
   }).addTo(map);
-  map.fitBounds(districtLayer.getBounds(), { padding: [20, 20] });
 
   let hasStaticBuildings = false;
   try {
@@ -200,14 +282,31 @@ async function init() {
   }
 
   if (!hasStaticBuildings) {
-    try {
-      await loadLiveBuildings();
-    } catch (e) {
+    try { await loadLiveBuildings(); }
+    catch (e) {
       console.error('Live OSM building load failed', e);
-      info.innerHTML = 'Boundary xarita ishlayapti, lekin OSM bino ma’lumoti hozir yuklanmadi.<br>Actions yoki Overpass API qayta ishga tushiriladi.';
+      setInfo('Viloyat xaritasi ishlayapti, lekin OSM bino ma’lumoti hozir yuklanmadi.<br><span class="muted">Overpass API vaqtincha javob bermagan bo‘lishi mumkin.</span>');
     }
   }
+
+  L.control.layers({ 'OSM basemap': osm }, { 'Viloyat chegarasi': provinceLayer, 'Pilot hududlar': pilotLayer, 'Bino footprintlari': buildingLayer }, { collapsed: true }).addTo(map);
 }
+
+document.querySelectorAll('[data-focus]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-focus]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const key = btn.dataset.focus;
+    if (key === 'all') {
+      if (provinceLayer) map.fitBounds(provinceLayer.getBounds(), { padding: [26, 26] });
+      showSummary();
+    } else if (pilotBounds[key]) {
+      map.fitBounds(pilotBounds[key], { padding: [40, 40] });
+      const pLayer = Object.values(pilotLayer._layers).find(l => l.feature.properties.name === key);
+      if (pLayer) showPilotInfo(pLayer.feature.properties);
+    }
+  });
+});
 
 init().catch(err => {
   console.error(err);
