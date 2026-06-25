@@ -1,0 +1,7 @@
+raw_osm/
+_tmp_hududlar/
+*.zip
+*.mbtiles
+*.pmtiles
+__pycache__/
+.DS_Store
