@@ -1,0 +1,9 @@
+/* Nurafshon shahri uchun Overpass Turbo query namunasi. */
+[out:json][timeout:90];
+(
+  way["building"](40.9824987,69.3105502,41.0737133,69.3814319);
+  relation["building"](40.9824987,69.3105502,41.0737133,69.3814319);
+);
+out body;
+>;
+out skel qt;
