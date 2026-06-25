@@ -1,0 +1,38 @@
+name: Fetch OSM pilot buildings
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/fetch_osm_buildings.py
+      - .github/workflows/fetch-osm-buildings.yml
+      - requirements.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-buildings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch Nurafshon and Chirchiq buildings from OSM
+        run: python scripts/fetch_osm_buildings.py
+
+      - name: Commit generated building data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/buildings.geojson data/toshkent_viloyati_tumanlar.geojson data/building_stats.csv
+          git diff --cached --quiet || git commit -m "Fetch OSM pilot building footprints"
+          git push
