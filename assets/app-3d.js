@@ -17,9 +17,9 @@ function setDetails(html) { details.innerHTML = html; }
 const map = new maplibregl.Map({
   container: 'map',
   center: [69.584, 41.475],
-  zoom: 12.15,
-  pitch: 61,
-  bearing: -22,
+  zoom: 13.15,
+  pitch: 72,
+  bearing: -32,
   antialias: true,
   style: {
     version: 8,
@@ -31,7 +31,8 @@ const map = new maplibregl.Map({
         attribution: '© OpenStreetMap contributors © CARTO'
       }
     },
-    layers: [{ id: 'dark', type: 'raster', source: 'dark', paint: { 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.72, 'raster-saturation': -0.65 } }]
+    layers: [{ id: 'dark', type: 'raster', source: 'dark', paint: { 'raster-brightness-min': 0.02, 'raster-brightness-max': 0.62, 'raster-saturation': -0.72 } }],
+    light: { anchor: 'viewport', color: '#ffffff', intensity: 0.55, position: [1.2, 210, 30] }
   }
 });
 
@@ -72,7 +73,7 @@ function toFeature(el) {
   const coords = g.map(p => [p.lon, p.lat]);
   if (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1]) coords.push(coords[0]);
   const a = areaM2(coords);
-  const h = Math.max(5, Math.min(80, Math.sqrt(a) * 0.9));
+  const h = Math.max(22, Math.min(260, Math.sqrt(a) * 2.8));
   return {
     type: 'Feature',
     properties: { osm_id: 'way/' + el.id, building: el.tags?.building || 'yes', name: el.tags?.name || '', area_m2: a, height_m: h },
@@ -124,7 +125,7 @@ function makeHex(features) {
     if (cx < w || cx > e || cy < s || cy > n) return;
     out.push({
       type: 'Feature',
-      properties: { count: item.count, area: item.area, height_m: Math.min(120, 8 + item.count * 3.2) },
+      properties: { count: item.count, area: item.area, height_m: Math.min(520, 35 + item.count * 13) },
       geometry: { type: 'Polygon', coordinates: [hexPolygon(cx, cy, rx, ry)] }
     });
   });
@@ -137,7 +138,7 @@ function updateKpi(stats) {
   kpiFootprint.textContent = fmt(stats.areaM2 / 1000000, 3);
   kpiShare.textContent = fmt(share, 3) + '%';
   kpiHotspots.textContent = fmt(stats.hotspots);
-  setInfo(`<b>Chirchiq 3D urban footprint</b><br><span class="muted">Binolar 3D extrusion sifatida ko‘tarildi. Hex ustunlar qurilish zichligini bildiradi. Slider orqali hex grid yorug‘ligini boshqaring.</span><table class="mini-table"><tr><th>Indikator</th><th>Qiymat</th></tr><tr><td>Bino soni</td><td>${fmt(stats.count)}</td></tr><tr><td>Footprint</td><td>${fmt(stats.areaM2 / 1000000, 3)} km²</td></tr><tr><td>Built-up ulushi</td><td>${fmt(share, 3)}%</td></tr><tr><td>Hex ustunlar</td><td>${fmt(stats.hotspots)}</td></tr></table>`);
+  setInfo(`<b>Chirchiq 3D urban footprint</b><br><span class="muted">Kamera 72° pitch bilan qiyalashtirildi. Binolar va hex grid 3D extrusion sifatida ko‘tarildi. Slider orqali hex grid yorug‘ligini boshqaring.</span><table class="mini-table"><tr><th>Indikator</th><th>Qiymat</th></tr><tr><td>Bino soni</td><td>${fmt(stats.count)}</td></tr><tr><td>Footprint</td><td>${fmt(stats.areaM2 / 1000000, 3)} km²</td></tr><tr><td>Built-up ulushi</td><td>${fmt(share, 3)}%</td></tr><tr><td>Hex ustunlar</td><td>${fmt(stats.hotspots)}</td></tr></table>`);
 }
 
 function addLayers(buildings, hex, stats) {
@@ -152,7 +153,8 @@ function addLayers(buildings, hex, stats) {
       'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'count'], 4, '#facc15', 20, '#f97316', 45, '#ef4444'],
       'fill-extrusion-height': ['get', 'height_m'],
       'fill-extrusion-base': 0,
-      'fill-extrusion-opacity': 0.34
+      'fill-extrusion-opacity': 0.34,
+      'fill-extrusion-vertical-gradient': true
     }
   });
 
@@ -164,7 +166,8 @@ function addLayers(buildings, hex, stats) {
       'fill-extrusion-color': ['case', ['>', ['get', 'area_m2'], 450], '#ff5138', '#ffb36b'],
       'fill-extrusion-height': ['get', 'height_m'],
       'fill-extrusion-base': 0,
-      'fill-extrusion-opacity': 0.88
+      'fill-extrusion-opacity': 0.94,
+      'fill-extrusion-vertical-gradient': true
     }
   });
 
@@ -207,7 +210,7 @@ map.on('load', async () => {
     const stats = { count: features.length, areaM2: features.reduce((s, f) => s + f.properties.area_m2, 0), areaKm2: bboxAreaKm2(AREA.bbox), hotspots: hex.features.length };
     addLayers(buildings, hex, stats);
     setGridBrightness(brightnessInput?.value || 34);
-    map.fitBounds([[AREA.bbox[0], AREA.bbox[1]], [AREA.bbox[2], AREA.bbox[3]]], { padding: 65, pitch: 61, bearing: -22 });
+    map.easeTo({ center: [69.584, 41.475], zoom: 13.35, pitch: 72, bearing: -32, duration: 0 });
   } catch (err) {
     console.error(err);
     setInfo('3D xarita yuklashda xatolik: ' + err.message);
