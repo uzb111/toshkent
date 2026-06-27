@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chirchiq — 3D urbanizatsiya va qurilish dinamikasi</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="assets/style-3d.css?v=20260625-06" />
+</head>
+<body>
+  <aside id="panel">
+    <div class="eyebrow">PhD 3D urban analytics</div>
+    <h1>3D урбанизация ва қурилиш динамикаси</h1>
+    <p class="muted"><b>Chirchiq shahri</b> bo‘yicha 3D bino extrusionlari, hexagonal zichlik ustunlari va urbanizatsiya bosimi tahlili.</p>
+
+    <div class="kpi-grid">
+      <div class="kpi"><span id="kpi-buildings">–</span><small>3D bino footprintlari</small></div>
+      <div class="kpi"><span id="kpi-footprint">–</span><small>footprint km²</small></div>
+      <div class="kpi"><span id="kpi-share">–</span><small>built-up ulushi</small></div>
+      <div class="kpi"><span id="kpi-hotspots">–</span><small>3D hex ustunlar</small></div>
+    </div>
+
+    <div class="control-card">
+      <label for="gridBrightness">Hex grid yorug‘ligi <b id="gridBrightnessValue">34%</b></label>
+      <input id="gridBrightness" type="range" min="5" max="82" value="34" />
+    </div>
+
+    <div class="legend">
+      <h2>Legenda</h2>
+      <div><span class="swatch density"></span> 3D hexagonal qurilish zichligi</div>
+      <div><span class="swatch building"></span> 3D bino extrusionlari</div>
+      <div><span class="swatch selected"></span> Tanlangan obyekt</div>
+    </div>
+
+    <div id="info" class="card">3D xarita yuklanmoqda...</div>
+
+    <div class="method card">
+      <b>Tadqiqot mazmuni</b>
+      <ol>
+        <li>Qurilish izi: OSM <code>building=*</code> footprintlari.</li>
+        <li>3D balandlik: footprint maydoniga asoslangan vizual extrusion.</li>
+        <li>Zichlik: hexagonal grid bo‘yicha 3D urban concentration.</li>
+      </ol>
+    </div>
+
+    <div class="footer">MapLibre GL 3D. Boundary chiziqlar yashirilgan; fokus 3D bino va hex density tahlilda.</div>
+  </aside>
+
+  <main id="map"></main>
+
+  <section id="detailsPanel" class="details-panel">
+    <div class="details-title">Obyekt pasporti</div>
+    <div id="detailsContent" class="details-content">3D bino yoki hex ustun ustiga bosing.</div>
+  </section>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="assets/app-3d.js?v=20260625-06"></script>
+</body>
+</html>
