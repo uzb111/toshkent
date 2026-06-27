@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chirchiq — 3D urbanizatsiya va qurilish dinamikasi</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="assets/style-3d.css?v=20260625-07" />
+  <link rel="stylesheet" href="assets/style-3d.css?v=20260625-08" />
 </head>
 <body>
   <aside id="panel">
     <div class="eyebrow">PhD 3D urban analytics</div>
     <h1>3D урбанизация ва қурилиш динамикаси</h1>
-    <p class="muted"><b>Chirchiq shahri</b> bo‘yicha 3D bino extrusionlari, hexagonal zichlik ustunlari va urbanizatsiya bosimi tahlili.</p>
+    <p class="muted"><b>Chirchiq urban core</b> bo‘yicha tezlashtirilgan 3D bino extrusionlari, hexagonal zichlik ustunlari va urbanizatsiya bosimi tahlili.</p>
 
     <div class="kpi-grid">
       <div class="kpi"><span id="kpi-buildings">–</span><small>3D bino footprintlari</small></div>
@@ -43,7 +43,7 @@
       </ol>
     </div>
 
-    <div class="footer">MapLibre GL 3D. Boundary chiziqlar yashirilgan; fokus 3D bino va hex density tahlilda.</div>
+    <div class="footer">Tezlashtirilgan core-AOI + browser cache. Birinchi yuklashdan keyin ma’lumot local cache’da qoladi.</div>
   </aside>
 
   <main id="map"></main>
@@ -54,6 +54,6 @@
   </section>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="assets/app-3d.js?v=20260625-07"></script>
+  <script src="assets/app-3d-fast.js?v=20260625-08"></script>
 </body>
 </html>
