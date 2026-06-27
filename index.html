@@ -5,31 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chirchiq — urbanizatsiya va qurilish dinamikasi</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="assets/style.css?v=20260625-04" />
+  <link rel="stylesheet" href="assets/style.css?v=20260625-05" />
 </head>
 <body>
   <aside id="panel">
     <div class="eyebrow">PhD urban analytics demo</div>
     <h1>Урбанизация ва қурилиш динамикаси</h1>
-    <p class="muted">Toshkent viloyati kontekstida <b>Chirchiq shahri</b> bo‘yicha qurilish footprintlari, zichlik o‘choqlari va urbanizatsiya bosimi tahlili.</p>
+    <p class="muted"><b>Chirchiq shahri</b> bo‘yicha qurilish footprintlari, hexagonal zichlik o‘choqlari va urbanizatsiya bosimi tahlili.</p>
 
     <div class="kpi-grid">
       <div class="kpi"><span id="kpi-buildings">–</span><small>bino footprintlari</small></div>
       <div class="kpi"><span id="kpi-footprint">–</span><small>footprint km²</small></div>
       <div class="kpi"><span id="kpi-share">–</span><small>built-up ulushi</small></div>
-      <div class="kpi"><span id="kpi-hotspots">–</span><small>zichlik o‘choqlari</small></div>
+      <div class="kpi"><span id="kpi-hotspots">–</span><small>hex zichlik</small></div>
     </div>
 
     <div class="toolbar">
-      <button data-focus="all" class="active">Toshkent vil.</button>
-      <button data-focus="Chirchiq">Chirchiq urban core</button>
+      <button data-focus="Chirchiq" class="active">Chirchiq urban core</button>
     </div>
 
     <div class="legend">
       <h2>Legenda</h2>
-      <div><span class="swatch boundary"></span> Toshkent viloyati chegarasi</div>
-      <div><span class="swatch pilot"></span> Chirchiq shahar AOI</div>
-      <div><span class="swatch density"></span> Qurilish zichligi o‘choqlari</div>
+      <div><span class="swatch density"></span> Hexagonal qurilish zichligi</div>
       <div><span class="swatch building"></span> Bino footprintlari</div>
       <div><span class="swatch selected"></span> Tanlangan bino</div>
     </div>
@@ -40,22 +37,22 @@
       <b>Tadqiqot mazmuni</b>
       <ol>
         <li>Qurilish izi: OSM <code>building=*</code> footprintlari.</li>
-        <li>Urban bosim: footprint maydoni / AOI maydoni.</li>
-        <li>Zichlik: 500–700 m atrofidagi grid bo‘yicha bino konsentratsiyasi.</li>
+        <li>Urban bosim: footprint maydoni / urban core maydoni.</li>
+        <li>Zichlik: hexagonal grid bo‘yicha bino konsentratsiyasi.</li>
       </ol>
     </div>
 
-    <div class="footer">Night-mode web map. Manba: OpenStreetMap Overpass API va foydalanuvchi bergan hudud chegaralari.</div>
+    <div class="footer">Night-mode web map. Asosiy fokus: bino footprint va hex density tahlil.</div>
   </aside>
 
   <main id="map"></main>
 
   <section id="detailsPanel" class="details-panel">
     <div class="details-title">Obyekt pasporti</div>
-    <div id="detailsContent" class="details-content">Bino yoki zichlik o‘chog‘i ustiga bosing.</div>
+    <div id="detailsContent" class="details-content">Bino yoki hex zichlik o‘chog‘i ustiga bosing.</div>
   </section>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="assets/app-night.js?v=20260625-04"></script>
+  <script src="assets/app-hex.js?v=20260625-05"></script>
 </body>
 </html>
